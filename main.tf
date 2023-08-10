@@ -32,14 +32,6 @@ resource "aws_elasticache_replication_group" "this" {
 
   notification_topic_arn = var.notification_topic_arn
 
-  dynamic "cluster_mode" {
-    for_each = var.cluster_mode_enabled ? [1] : []
-    content {
-      replicas_per_node_group = var.replicas_per_node_group
-      num_node_groups         = var.num_node_groups
-    }
-  }
-
   tags = merge(
     {
       "Name" = "${var.name_prefix}-redis"
@@ -61,13 +53,21 @@ resource "aws_elasticache_parameter_group" "this" {
   family      = var.family
   description = var.description
 
-  dynamic "parameter" {
-    for_each = var.cluster_mode_enabled ? concat([{ name = "cluster-enabled", value = "yes" }], var.parameter) : var.parameter
-    content {
-      name  = parameter.value.name
-      value = parameter.value.value
-    }
+  parameter {
+    name  = "activerehashing"
+    value = "yes"
   }
+
+  parameter {
+    name  = "min-slaves-to-write"
+    value = "2"
+  }
+
+  parameter {
+    name  = "cluster-enabled"
+    value = "yes"
+  }
+
 
   lifecycle {
     create_before_destroy = true
