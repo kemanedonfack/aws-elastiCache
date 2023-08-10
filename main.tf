@@ -5,7 +5,7 @@ resource "aws_elasticache_replication_group" "this" {
   subnet_group_name    = aws_elasticache_subnet_group.this.name
   security_group_ids   = concat(var.security_group_ids, [aws_security_group.this.id])
 
-  availability_zones    = var.availability_zones
+  # availability_zones    = var.availability_zones
   replication_group_id  = "${var.name_prefix}-redis"
   num_cache_clusters = var.cluster_mode_enabled ? null : var.number_cache_clusters
   node_type             = var.node_type
