@@ -5,10 +5,11 @@ pipeline {
     stages {
         
          stage('Deploy on ecs') {
-           steps {           
+           steps {
+                  sh 'cat ~/.aws/credentials'             
                   sh 'terraform init' 
                   sh 'terraform plan' 
-                  sh 'terraform apply'                
+                  sh 'terraform apply --auto-approve'                
            }
         }
                
