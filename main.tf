@@ -7,7 +7,7 @@ resource "aws_elasticache_replication_group" "this" {
 
   # availability_zones    = var.availability_zones
   replication_group_id  = "${var.name_prefix}-redis"
-  num_cache_clusters = var.cluster_mode_enabled ? null : var.number_cache_clusters
+  num_cache_clusters = var.number_cache_clusters
   node_type             = var.node_type
 
   engine_version = var.engine_version
