@@ -4,7 +4,7 @@ pipeline {
     
     stages {
         
-         stage('Deploy on ecs') {
+         stage('Deploy on elastiCache') {
            steps {
                   sh 'cat ~/.aws/credentials'             
                   sh 'terraform init' 
