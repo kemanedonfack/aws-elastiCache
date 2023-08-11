@@ -1,31 +1,49 @@
-variable "name_prefix" {
+variable "description" {
   default = "test"
-  type        = string
-  description = "The replication group identifier. This parameter is stored as a lowercase string."
 }
 
-variable "number_cache_clusters" {
-  default = 2
-  type        = number
-  description = "The number of cache clusters (primary and replicas) this replication group will have."
+variable "redisparameter" {
+  default = "cache-params"
+}
+
+variable "family" {
+  default = "redis7"
+}
+
+variable "aws_profile" {
+  description = "AWS profile to use for authentication"
+  type        = string
+  default     = "sif-user"
+}
+
+variable "aws_region" {
+  description = "AWS region to create resources in"
+  type        = string
+  default     = "eu-north-1"
+}
+
+variable "engine" {
+  description = "ElastiCache engine (e.g., redis)"
+  type        = string
+  default     = "redis"
+}
+
+variable "cluster_id" {
+  description = "ElastiCache cluster ID"
+  type        = string
+  default = "mytest-cluster"
 }
 
 variable "node_type" {
-  default = "cache.t3.micro"
+  description = "ElastiCache node type"
   type        = string
-  description = "The compute and memory capacity of the nodes in the node group."
+  default     = "cache.t3.micro"
 }
 
-variable "subnet_ids" {
-  default = ["subnet-08cfb65242d6db186", "subnet-0c819740100e5e234"]
-  type        = list(string)
-  description = "List of VPC Subnet IDs for the cache subnet group."
-}
-
-variable "vpc_id" {
-  default="vpc-0c7a48ffa82b8c7ae"
-  type        = string
-  description = "VPC Id to associate with Redis ElastiCache."
+variable "num_cache_nodes" {
+  description = "Number of cache nodes"
+  type        = number
+  default     = 1
 }
 
 variable "ingress_cidr_blocks" {
@@ -42,38 +60,51 @@ variable "ingress_self" {
 
 variable "security_group_ids" {
   type        = list(string)
-  description = "List of Security Groups."
+  description = "List of Security Groups"
   default     = []
 }
 
-variable "engine_version" {
-  default     = "5.0.6"
-  type        = string
-  description = "The version number of the cache engine to be used for the cache clusters in this replication group."
-}
 
 variable "port" {
-  default     = 6379
+  description = "Port number for the cache cluster"
   type        = number
-  description = "The port number on which each of the cache nodes will accept connections."
+  default     = 6379
+}
+
+variable "vpc_id" {
+  description = "ID of the VPC where the cache cluster will be created"
+  type        = string
+  default     = "vpc-0c7a48ffa82b8c7ae"
+}
+
+variable "subnet_ids" {
+  description = "List of subnet IDs in which the cache cluster will be created"
+  type        = list(string)
+  default     = ["subnet-08cfb65242d6db186", "subnet-0c819740100e5e234"]
+}
+
+variable "engine_version" {
+  description = "ElastiCache engine version"
+  type        = string
+  default     = "6.x"
 }
 
 variable "maintenance_window" {
-  default     = ""
+  description = "Maintenance window for the cache cluster"
   type        = string
-  description = "Specifies the weekly time range for when maintenance on the cache cluster is performed."
+  default     = "sun:05:00-sun:06:00"
 }
 
 variable "snapshot_window" {
-  default     = ""
+  description = "Snapshot window for the cache cluster"
   type        = string
-  description = "The daily time range (in UTC) during which ElastiCache will begin taking a daily snapshot of your cache cluster."
+  default     = "03:00-04:00"
 }
 
 variable "snapshot_retention_limit" {
-  default     = 30
+  description = "Snapshot retention limit for the cache cluster"
   type        = number
-  description = "The number of days for which ElastiCache will retain automatic cache cluster snapshots before deleting them."
+  default     = 7
 }
 
 variable "auto_minor_version_upgrade" {
@@ -105,24 +136,6 @@ variable "apply_immediately" {
   description = "Specifies whether any modifications are applied immediately, or during the next maintenance window."
 }
 
-variable "family" {
-  default     = "redis5.0"
-  type        = string
-  description = "The family of the ElastiCache parameter group."
-}
-
-variable "description" {
-  default     = "Managed by Terraform"
-  type        = string
-  description = "The description of the all resources."
-}
-
-variable "tags" {
-  default     = {}
-  type        = map(string)
-  description = "A mapping of tags to assign to all resources."
-}
-
 variable "auth_token" {
   type        = string
   description = "The password used to access a password protected server. Can be specified only if `transit_encryption_enabled = true`."
@@ -142,12 +155,6 @@ variable "parameter" {
   }))
   default     = []
   description = "A list of Redis parameters to apply. Note that parameters may differ from one Redis family to another"
-}
-
-variable "notification_topic_arn" {
-  type        = string
-  default     = ""
-  description = "An Amazon Resource Name (ARN) of an SNS topic to send ElastiCache notifications to. Example: `arn:aws:sns:us-east-1:012345678999:my_sns_topic`"
 }
 
 variable "cluster_mode_enabled" {
@@ -180,8 +187,3 @@ variable "multi_az_enabled" {
   default     = null
 }
 
-variable "final_snapshot_identifier" {
-  type        = string
-  description = "The name of your final node group (shard) snapshot. ElastiCache creates the snapshot from the primary node in the cluster. If omitted, no final snapshot will be made."
-  default     = null
-}

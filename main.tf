@@ -1,99 +1,67 @@
-resource "aws_elasticache_replication_group" "this" {
-  engine = "redis"
-
-  parameter_group_name = aws_elasticache_parameter_group.this.name
-  subnet_group_name    = aws_elasticache_subnet_group.this.name
-  security_group_ids   = concat(var.security_group_ids, [aws_security_group.this.id])
-
-  # availability_zones    = var.availability_zones
-  replication_group_id  = "${var.name_prefix}-redis"
-  num_cache_clusters = var.number_cache_clusters
-  node_type             = var.node_type
-
-  engine_version = var.engine_version
-  port           = var.port
-
-  maintenance_window         = var.maintenance_window
-  snapshot_window            = var.snapshot_window
-  snapshot_retention_limit   = var.snapshot_retention_limit
-  final_snapshot_identifier  = var.final_snapshot_identifier
-  automatic_failover_enabled = var.automatic_failover_enabled && var.number_cache_clusters > 1 ? true : false
+resource "aws_elasticache_cluster" "redis" {
+  cluster_id           = var.cluster_id
+  engine               = var.engine
+  node_type            = var.node_type
+  num_cache_nodes      = var.num_cache_nodes
+  port                 = var.port
+  parameter_group_name = "default.redis7"
+  subnet_group_name    = aws_elasticache_subnet_group.redis.name
+  security_group_ids  = concat(var.security_group_ids, [aws_security_group.redis.id])
+  maintenance_window   = var.maintenance_window
+  snapshot_window      = var.snapshot_window
+  snapshot_retention_limit = var.snapshot_retention_limit
+  # multi_az_enabled           = var.multi_az_enabled
   auto_minor_version_upgrade = var.auto_minor_version_upgrade
-  multi_az_enabled           = var.multi_az_enabled
-
-  at_rest_encryption_enabled = var.at_rest_encryption_enabled
-  transit_encryption_enabled = var.transit_encryption_enabled
-  auth_token                 = var.auth_token != "" ? var.auth_token : null
-  kms_key_id                 = var.kms_key_id
-
+  # at_rest_encryption_enabled = var.at_rest_encryption_enabled
+  # transit_encryption_enabled = var.transit_encryption_enabled
+  # auth_token                 = var.auth_token != "" ? var.auth_token : null
+  # kms_key_id                 = var.kms_key_id
   apply_immediately = var.apply_immediately
 
-  description = var.description
-
-  notification_topic_arn = var.notification_topic_arn
-
-  tags = merge(
-    {
-      "Name" = "${var.name_prefix}-redis"
-    },
-    var.tags,
-  )
+  tags = {
+    Name = "ElastiCacheRedis"
+  }
 }
 
-resource "random_id" "redis_pg" {
-  keepers = {
-    family = var.family
-  }
+resource "aws_elasticache_subnet_group" "redis" {
+  name       = "redis-subnet-group"
+  subnet_ids = var.subnet_ids
 
-  byte_length = 2
+  tags = {
+    Name = "ElastiCacheRedisSubnetGroup"
+  }
 }
 
-resource "aws_elasticache_parameter_group" "this" {
-  name        = "${var.name_prefix}-redis-${random_id.redis_pg.hex}"
-  family      = var.family
-  description = var.description
+resource "aws_security_group" "redis" {
+  name        = "redis-sg"
+  vpc_id      = var.vpc_id
 
-  parameter {
-    name  = "activerehashing"
-    value = "yes"
-  }
-
-  parameter {
-    name  = "min-slaves-to-write"
-    value = "2"
-  }
-
-  parameter {
-    name  = "cluster-enabled"
-    value = "yes"
-  }
+  tags = {
+    Name = "ElastiCacheRedisSecurityGroup"
+    }
 
 
-  lifecycle {
+   lifecycle {
     create_before_destroy = true
   }
 
-  tags = var.tags
+
 }
 
-resource "aws_elasticache_subnet_group" "this" {
-  name        = "${var.name_prefix}-redis-sg"
-  subnet_ids  = var.subnet_ids
+resource "aws_elasticache_parameter_group" "redis" {
+  name        = var.redisparameter
+  family      = var.family
   description = var.description
 
-  tags = var.tags
-}
+  dynamic "parameter" {
+    for_each = var.cluster_mode_enabled ? concat([{ name = "cluster-enabled", value = "yes" }], var.parameter) : var.parameter
+    content {
+      name  = parameter.value.name
+      value = parameter.value.value
+    }
+  }    
 
-resource "aws_security_group" "this" {
-  name_prefix = "${var.name_prefix}-redis-"
-  vpc_id      = var.vpc_id
 
-  tags = merge(
-    {
-      "Name" = "${var.name_prefix}-redis"
-    },
-    var.tags
-  )
 
   lifecycle {
     create_before_destroy = true
@@ -108,7 +76,7 @@ resource "aws_security_group_rule" "ingress" {
   to_port           = var.port
   protocol          = "tcp"
   self              = true
-  security_group_id = aws_security_group.this.id
+  security_group_id = aws_security_group.redis.id
 }
 
 resource "aws_security_group_rule" "ingress_cidr_blocks" {
@@ -119,7 +87,7 @@ resource "aws_security_group_rule" "ingress_cidr_blocks" {
   to_port           = var.port
   protocol          = "tcp"
   cidr_blocks       = var.ingress_cidr_blocks
-  security_group_id = aws_security_group.this.id
+  security_group_id = aws_security_group.redis.id
 }
 
 resource "aws_security_group_rule" "egress" {
@@ -128,5 +96,5 @@ resource "aws_security_group_rule" "egress" {
   to_port           = 0
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.this.id
+  security_group_id = aws_security_group.redis.id
 }
